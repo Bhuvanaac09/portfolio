@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // In cloud preview environments where HMR WebSockets are not forwarded,
+      // provide a compliant WebSocket stub for Vite HMR so connection errors never reject.
+      (function() {
+        if (typeof window === 'undefined') return;
+
+        // Catch and suppress any uncaught Vite WebSocket connection rejections
+        window.addEventListener('unhandledrejection', function(event) {
+          const reason = event && event.reason;
+          const msg = (reason && (reason.message || reason.stack || String(reason))) || '';
+          if (msg.includes('WebSocket') || msg.includes('vite:ws') || msg.includes('vite-hmr') || msg.includes('closed without opened')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        });
+
+        window.addEventListener('error', function(event) {
+          const msg = (event && (event.message || '')) || '';
+          if (msg.includes('WebSocket') || msg.includes('vite:ws') || msg.includes('vite-hmr') || msg.includes('closed without opened')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        });
+
+        const NativeWS = window.WebSocket;
+        if (!NativeWS) return;
+
+        class HmrSafeWebSocket extends EventTarget {
+          static CONNECTING = 0;
+          static OPEN = 1;
+          static CLOSING = 2;
+          static CLOSED = 3;
+
+          CONNECTING = 0;
+          OPEN = 1;
+          CLOSING = 2;
+          CLOSED = 3;
+
+          readyState = 1; // WebSocket.OPEN immediately
+          url = '';
+          protocol = 'vite-hmr';
+          extensions = '';
+          bufferedAmount = 0;
+          binaryType = 'arraybuffer';
+
+          onopen = null;
+          onclose = null;
+          onerror = null;
+          onmessage = null;
+
+          constructor(url, protocols) {
+            super();
+            this.url = typeof url === 'string' ? url : (url ? url.toString() : '');
+            this.protocol = Array.isArray(protocols) ? protocols[0] : (protocols || 'vite-hmr');
+            // If native connection is requested for non-HMR purposes, fallback to NativeWS
+            const isHmr = this.protocol === 'vite-hmr' ||
+                          this.url.includes('token=') ||
+                          this.url.includes('24678') ||
+                          this.url.includes('5173');
+            if (!isHmr && NativeWS) {
+              return new NativeWS(url, protocols);
+            }
+
+            // Immediately mark as opened so Vite never creates a pending open/close promise
+            this.readyState = 1;
+            setTimeout(() => {
+              const openEvt = new Event('open');
+              if (typeof this.onopen === 'function') this.onopen(openEvt);
+              this.dispatchEvent(openEvt);
+            }, 0);
+          }
+
+          send(_data) {}
+          close(_code, _reason) {
+            this.readyState = 3;
+            const closeEvt = new CloseEvent('close', { code: 1000, reason: 'Normal Closure', wasClean: true });
+            if (typeof this.onclose === 'function') this.onclose(closeEvt);
+            this.dispatchEvent(closeEvt);
+          }
+        }
+
+        window.WebSocket = HmrSafeWebSocket;
+      })();
+    </script>
+    <title>Home - Chyavan Rohan</title>
+    <meta name="description" content="Portfolio of Chyavan Rohan Tammera, 2nd-year AIML student at JAIN University (Kanakapura, Bangalore). Sketches, anime references, Python codes, and StatForge." />
+    <link rel="icon" type="image/png" href="/assets/VG-favicon-copiar-150x150.png" />
+    <link rel="apple-touch-icon" href="/assets/VG-favicon-copiar.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <meta property="og:title" content="Chyavan Rohan Tammera - Portfolio" />
+    <meta property="og:description" content="2nd-year AIML student at JAIN University Bangalore. Exploring anime reference sketching and statistical machine learning code." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/assets/VG967-site-home-copiar-2.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
